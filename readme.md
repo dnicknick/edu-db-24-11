@@ -1,4 +1,4 @@
-## ДЗ-01
+## ДЗ-02
 
 ### Схема
 
@@ -7,129 +7,210 @@
 ### Описание таблиц и полей
 
 ```sql
--- Таблица: Категории продуктов
-CREATE TABLE categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Уникальный идентификатор категории
-    name VARCHAR(255) NOT NULL,             -- Название категории
-    description TEXT                        -- Описание категории
+CREATE TABLE categories
+(
+    id          INTEGER
+        primary key autoincrement,
+    name        VARCHAR(255) not null,
+    description TEXT
 );
 
--- Таблица: Контакты
-CREATE TABLE contacts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,   -- Уникальный идентификатор контакта
-    first_name VARCHAR(255) NOT NULL,       -- Имя контакта
-    middle_name VARCHAR(255) NOT NULL,      -- Отчество контакта
-    last_name VARCHAR(255) NOT NULL,        -- Фамилия контакта
-    birth_date DATE NOT NULL,                -- Дата рождения контакта
-    residence_place TEXT,                    -- Место жительства контакта
-    extra_info TEXT                          -- Дополнительная информация о контакте
+CREATE TABLE contacts
+(
+    id              INTEGER
+        primary key autoincrement,
+    first_name      VARCHAR(255) not null,
+    middle_name     VARCHAR(255) not null,
+    last_name       VARCHAR(255) not null,
+    birth_date      DATE         not null,
+    residence_place text,
+    extra_info      text
 );
 
--- Таблица: Покупатели
-CREATE TABLE customers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,    -- Уникальный идентификатор покупателя
-    name VARCHAR(255) NOT NULL,               -- Имя покупателя/внутренний-псевдоним
-    contact_id INT REFERENCES contacts,        -- Идентификатор контакта (ссылка на таблицу contacts)
-    extra_info TEXT                           -- Дополнительная информация о покупателе
+CREATE TABLE customers
+(
+    id         INTEGER
+        primary key autoincrement,
+    name       VARCHAR(255) not null,
+    contact_id int
+        references contacts,
+    extra_info text
 );
 
--- Таблица: Производители
-CREATE TABLE manufacturers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,     -- Уникальный идентификатор производителя
-    name VARCHAR(255) NOT NULL,                -- Название производителя/внутренний-псевдоним
-    contact_id INT REFERENCES contacts,         -- Идентификатор контакта (ссылка на таблицу contacts)
-    extra_info TEXT                            -- Дополнительная информация о производителе
+CREATE TABLE manufacturers
+(
+    id         INTEGER
+        primary key autoincrement,
+    name       VARCHAR(255) not null,
+    contact_id int
+        references contacts,
+    extra_info text
 );
 
--- Таблица: Поставщики
-CREATE TABLE suppliers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,      -- Уникальный идентификатор поставщика
-    name VARCHAR(255) NOT NULL,                -- Название поставщика/внутренний-псевдоним
-    contact_id INT REFERENCES contacts,         -- Идентификатор контакта (ссылка на таблицу contacts)
-    extra_info TEXT                            -- Дополнительная информация о поставщике
-);
-
--- Таблица: Продукты
-CREATE TABLE products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,      -- Уникальный идентификатор продукта
-    name VARCHAR(255) NOT NULL,                -- Название продукта/внутренний-псевдоним
-    category_id INT REFERENCES categories,      -- Идентификатор категории (ссылка на таблицу categories)
-    manufacturer_id INT REFERENCES manufacturers, -- Идентификатор производителя (ссылка на таблицу manufacturers)
-    supplier_id INT REFERENCES suppliers,       -- Идентификатор поставщика (ссылка на таблицу suppliers)
-    description TEXT                           -- Описание продукта
-);
-
--- Таблица: Цены
-CREATE TABLE prices (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,      -- Уникальный идентификатор цены
-    product_id INT REFERENCES products,         -- Идентификатор продукта (ссылка на таблицу products)
-    price DECIMAL(10, 2) NOT NULL,             -- Цена продукта
-    valid_from DATE,                            -- Дата начала действия цены
-    valid_to DATE                              -- Дата окончания действия цены
-);
-
--- Таблица: Покупки
 CREATE TABLE purchases (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,       -- Уникальный идентификатор покупки
-    customer_id INT REFERENCES customers,        -- Идентификатор покупателя (ссылка на таблицу customers)
-    product_id INT REFERENCES products,          -- Идентификатор продукта (ссылка на таблицу products)
-    paid_date DATE NOT NULL,                    -- Дата покупки
-    quantity INT NOT NULL,                      -- Количество купленного продукта
-    total_price DECIMAL(10, 2) NOT NULL        -- Общая стоимость покупки
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INT,
+    paid_date DATE NOT NULL,
+    quantity INT NOT NULL,
+    total_price DECIMAL NOT NULL,
+    CONSTRAINT FK_purchases_customers FOREIGN KEY (customer_id) REFERENCES customers(id)
+);
+
+CREATE TABLE suppliers
+(
+    id         INTEGER
+        primary key autoincrement,
+    name       VARCHAR(255) not null,
+    contact_id int
+        references contacts,
+    extra_info text
+);
+
+CREATE TABLE products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR NOT NULL,
+    category_id INT,
+    manufacturer_id INT,
+    supplier_id INT,
+    description TEXT,
+    CONSTRAINT FK_products_manufacturers_2 FOREIGN KEY (manufacturer_id) REFERENCES manufacturers(id),
+    CONSTRAINT FK_products_suppliers_3 FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+);
+
+CREATE TABLE prices
+(
+    id         INTEGER
+        primary key autoincrement,
+    product_id INT
+        references products,
+    price      DECIMAL(10, 2) not null,
+    valid_from DATE,
+    valid_to   DATE
+);
+
+CREATE TABLE product_category (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INT REFERENCES products,
+    category_id INT REFERENCES categories
+);
+
+CREATE TABLE product_purchase (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INT REFERENCES products,
+    purchase_id INT REFERENCES purchases
 );
 ```
 
-### примеры бизнес-задач которые решает база
+1. Анализ возможных запросов/отчетов/поиска данных
 ```
-1. Анализ покупательского поведения
+Запросы по категориям:
+   Получение всех категорий.
+   Получение категории по имени.
 
-    Задача: Определить, какие продукты чаще всего покупаются вместе (например, "покупка в комплекте"). Это может помочь в создании акций и предложений, направленных на увеличение среднего чека.
-    Решение: Используя данные из таблицы "Покупки", можно провести анализ частоты совместных покупок и выявить популярные комбинации продуктов.
+Запросы по контактам:
+   Поиск контактов по имени или фамилии.
+   Получение всех контактов, связанных с покупателями, производителями и поставщиками.
 
-2. Прогнозирование спроса
+Запросы по покупателям:
+   Получение всех покупателей.
+   Поиск покупателя по идентификатору контакта.
 
-    Задача: Прогнозировать спрос на определенные продукты в зависимости от времени года, праздников или других факторов (например, акции, скидки).
-    Решение: С помощью исторических данных о покупках можно использовать методы машинного обучения для прогнозирования будущих продаж, что поможет в планировании запасов и закупок.
+Запросы по производителям и поставщикам:
+   Получение всех производителей и поставщиков.
+   Поиск по имени.
 
-3. Управление поставками и логистикой
+Запросы по продуктам:
+   Получение всех продуктов.
+   Поиск продукта по имени или категории.
+   Получение всех продуктов от конкретного производителя или поставщика.
 
-    Задача: Оптимизировать процесс закупок и поставок, чтобы минимизировать затраты и время доставки.
-    Решение: Анализируя данные о поставщиках и времени поставок, можно выявить наиболее эффективных поставщиков и оптимизировать график закупок.
+Запросы по покупкам:
+   Получение всех покупок.
+   Поиск покупок по покупателю или дате.
+   Получение всех покупок конкретного продукта.
 
-4. Сегментация клиентов
-
-    Задача: Сегментировать клиентов на основе их покупательского поведения, чтобы лучше нацеливать маркетинговые кампании.
-    Решение: Используя данные о покупках и характеристиках клиентов, можно создать сегменты (например, "частые покупатели", "покупатели со скидками", "новые клиенты") и разрабатывать персонализированные предложения для каждой группы.
-
-5. Анализ эффективности акций и скидок
-
-    Задача: Оценить, как различные акции и скидки влияют на объем продаж и прибыль.
-    Решение: Сравнивая данные о продажах до и после акций, можно определить, какие из них были наиболее успешными и какие стратегии стоит использовать в будущем.
-
-6. Управление возвратами и рекламациями
-
-    Задача: Анализировать причины возвратов и рекламаций, чтобы улучшить качество продуктов и обслуживания.
-    Решение: Внедрение дополнительной таблицы для учета возвратов и рекламаций, что позволит отслеживать, какие продукты чаще всего возвращаются и по каким причинам.
-
-7. Кросс-продажи и апсейлы
-
-    Задача: Разработка стратегий кросс-продаж и апсейлов на основе анализа покупок.
-    Решение: Используя данные о покупках, можно выявить, какие продукты часто покупаются вместе, и предлагать их в качестве дополнений к основным товарам.
-
-8. Анализ ценовой эластичности
-
-    Задача: Определить, как изменение цен на продукты влияет на объем продаж.
-    Решение: Сравнивая данные о ценах и объемах продаж, можно оценить, насколько чувствительны покупатели к изменениям цен, что поможет в формировании ценовой стратегии.
-
-9. Управление лояльностью клиентов
-
-    Задача: Разработка программ лояльности на основе анализа покупательского поведения.
-    Решение: Используя данные о частоте покупок и суммах, потраченных клиентами, можно создать программы лояльности, которые будут мотивировать клиентов совершать повторные покупки.
-
-10. Анализ конкурентов
-
-    Задача: Сравнить свои цены и ассортимент с конкурентами для выявления конкурентных преимуществ и недостатков.
-    Решение: Сбор данных о ценах и продуктах конкурентов (например, через веб-скрейпинг) и анализ их в сравнении с собственными данными для корректировки стратегии.
-
-Эти бизнес-задачи требуют глубокого анализа данных и могут значительно повысить эффективность бизнеса, улучшить клиентский опыт и увеличить прибыль.
+Запросы по ценам:
+   Получение всех цен для продукта.
+   Поиск цен по дате.
 ```
+
+2. Предполагаем возможную кардинальность поля
+
+   `categories.name`: низкая (может быть много категорий, но названия могут повторяться).
+
+   `contacts.first_name`, `last_name`: высокая (много уникальных имен и фамилий).
+
+   `customers.name`: высокая (много уникальных имен).
+
+   `manufacturers.name`: высокая (много уникальных производителей).
+
+   `products.name`: высокая (много уникальных продуктов).
+
+   `purchases.customer_id`: средняя (много покупок, при ограниченном количестве покупателей).
+
+   `prices.product_id`: высокая (много цен для разных продуктов).
+
+
+3. Создаем дополнительные индексы
+```sql
+-- Индексы для ускорения поиска
+CREATE INDEX idx_contacts_last_name ON contacts(last_name);
+-- Ускоряет поиск контактов по фамилии
+
+CREATE INDEX idx_contacts_first_name ON contacts(first_name);
+-- Ускоряет поиск контактов по имени
+
+CREATE INDEX idx_customers_contact_id ON customers(contact_id);
+-- Ускоряет поиск покупателей по идентификатору контакта
+
+CREATE INDEX idx_products_name ON products(name);
+-- Ускоряет поиск продуктов по имени
+
+CREATE INDEX idx_purchases_customer_id ON purchases(customer_id);
+-- Ускоряет поиск покупок по идентификатору покупателя
+
+CREATE INDEX idx_prices_product_id ON prices(product_id);
+-- Ускоряет поиск цен по идентификатору продукта
+
+CREATE INDEX idx_product_category_product_id ON product_category(product_id);
+-- Ускоряет поиск категорий по идентификатору продукта
+
+CREATE INDEX idx_product_purchase_product_id ON product_purchase(product_id);
+-- Ускоряет поиск покупок по идентификатору продукта
+```
+
+4. Описание индексов
+
+    `idx_contacts_last_name`: Ускоряет поиск контактов по фамилии, что часто используется в отчетах и запросах.
+
+    `idx_contacts_first_name`: Ускоряет поиск контактов по имени, что также часто используется.
+
+    `idx_customers_contact_id`: Ускоряет поиск покупателей по идентификатору контакта, что важно для связи между таблицами.
+
+    `idx_products_name`: Ускоряет поиск продуктов по имени, что важно для быстрого доступа к информации о продукте.
+
+    `idx_purchases_customer_id`: Ускоряет поиск покупок по идентификатору покупателя, что важно для анализа покупок.
+
+    `idx_prices_product_id`: Ускоряет поиск цен по идентификатору продукта, что важно для получения актуальной информации о ценах.
+
+    `idx_product_category_product_id`: Ускоряет поиск категорий по идентификатору продукта, что важно для анализа категорий продуктов.
+
+    `idx_product_purchase_product_id`: Ускоряет поиск покупок по идентификатору продукта, что важно для анализа продаж.
+
+5. Логические ограничения в БД
+
+    * Уникальность:
+
+   `UNIQUE(name)` в таблицах `categories`, `customers`, `manufacturers`, `products` для предотвращения дублирования.
+  
+   В таблице связей `product_category` уникальный набор `unique(product_id, category_id)` для предотвращения дублирования связей между товаром и категорией.
+
+   В таблице связей `product_purchase` уникальный набор `unique(product_id, purchase_id)` для предотвращения дублирования связей между товаром и покупкой.
+
+6. Ограничения по выбранным полям
+
+    * Проверка на отрицательные значения:
+   
+    В таблице `purchases` необходимо проверка на поле `quantity` (количество) и `total_price` (общую стоимость, равно 0 - при акциях\скидках\подарках), чтобы они не были отрицательными.
+
+    В таблице `prices` проверка поля `price` (цена) на значение не отрицательное.
